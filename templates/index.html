@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Journal</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar Navigation -->
+        <div class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">📊</div>
+                <span>Trading Journal</span>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Main</div>
+                <a class="nav-link active" onclick="switchSection('review')">Review</a>
+                <a class="nav-link" onclick="switchSection('create')">Create</a>
+                <a class="nav-link" onclick="switchSection('analyze')">Analyze</a>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="main">
+            <div class="header">
+                <span id="current-section">Journal Review</span>
+            </div>
+
+            <div class="content">
+                <!-- ============= SECTION 1: REVIEW ============= -->
+                <div id="review" class="section active">
+                    <!-- Top Filter Bar -->
+                    <div class="review-filters">
+                        <div class="filter-group">
+                            <label>Ticker</label>
+                            <select id="review-ticker" onchange="selectFolderByDropdown(this.value)">
+                                <option value="">— Load Folders First —</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Date</label>
+                            <input type="date" id="review-date">
+                        </div>
+                        <div class="filter-group">
+                            <label>Type</label>
+                            <select id="review-type">
+                                <option value="">All</option>
+                                <option value="Stock">Stock</option>
+                                <option value="Option">Option</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Strategy</label>
+                            <select id="review-strategy">
+                                <option value="">All</option>
+                                <option value="Brando">Brando</option>
+                                <option value="Mehrdad">Mehrdad</option>
+                                <option value="Shoof">Shoof</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Secondary Filters -->
+                    <div class="review-secondary-filters">
+                        <div class="outcome-filter">
+                            <label>Outcome</label>
+                            <div class="outcome-pills">
+                                <button class="outcome-pill active" onclick="filterByOutcome('all')">All</button>
+                                <button class="outcome-pill" onclick="filterByOutcome('winner')">✓ Winner</button>
+                                <button class="outcome-pill" onclick="filterByOutcome('loser')">✗ Loser</button>
+                            </div>
+                        </div>
+                        <div class="score-filter">
+                            <label>Score ≥</label>
+                            <div class="score-slider">
+                                <input type="range" id="score-slider" min="0" max="100" value="0" 
+                                       oninput="document.getElementById('score-value').textContent = this.value">
+                                <span id="score-value">0</span>
+                            </div>
+                        </div>
+                        <div class="filename-filter">
+                            <label>File name</label>
+                            <input type="text" id="filename-filter" placeholder="e.g., D-IL.png">
+                        </div>
+                        <button class="btn-primary" style="align-self: flex-end;" onclick="applyFilters()">Apply</button>
+                    </div>
+
+                    <!-- Main Content: Chart + Trade Info -->
+                    <div class="review-main">
+                        <!-- Left: Chart Area -->
+                        <div class="review-chart-area">
+                            <div class="chart-label" id="chart-label">
+                                <span id="chart-description">TSLA · 1D · Log + Indicators</span>
+                                <div style="display: flex; gap: 8px;">
+                                    <button class="btn-fullscreen-icon" onclick="fullscreenImage()" title="Open fullscreen" style="width: 32px; height: 32px;">⛶</button>
+                                    <button class="btn-fullscreen-icon" onclick="replaceImage()" title="Replace image" style="width: 32px; height: 32px;">🔄</button>
+                                    <button class="btn-fullscreen-icon" onclick="deleteImage()" title="Delete image" style="width: 32px; height: 32px; color: var(--color-danger);">🗑️</button>
+                                </div>
+                            </div>
+                            <div class="chart-image" id="chart-image">
+                                <div style="color: var(--color-text-tertiary); text-align: center; padding: 40px;">
+                                    Load Folders first to view trades
+                                </div>
+                            </div>
+
+                            <!-- Image Navigation -->
+                            <div class="image-nav">
+                                <button class="btn-secondary" onclick="previousImage()">← Previous</button>
+                                <span class="image-counter" id="image-counter">No image selected</span>
+                                <button class="btn-secondary" onclick="nextImage()">Next →</button>
+                            </div>
+
+                            <!-- Notes Section (Below Image) -->
+                            <div class="review-notes-section" style="margin-top: 16px;">
+                                <div class="notes-header">
+                                    <div class="notes-title" id="notes-title">Notes for D-ILpng</div>
+                                    <div class="notes-timestamp" id="notes-timestamp">Saved now</div>
+                                </div>
+                                <textarea id="review-notes" class="notes-textarea" placeholder="Add your observations about this trade..."></textarea>
+                                <button class="btn-primary" style="align-self: flex-end; margin-top: 12px;" onclick="saveCurrentNotes()">Save notes</button>
+                            </div>
+                        </div>
+
+                        <!-- Right: Trade Info Sidebar -->
+                        <div class="review-sidebar">
+                            <!-- Outcome Badge -->
+                            <div class="trade-outcome-section">
+                                <span class="outcome-badge" id="outcome-badge">Winner</span>
+                                <span class="strategy-badge" id="strategy-badge">Mehrdad</span>
+                            </div>
+
+                            <!-- P&L Display -->
+                            <div class="trade-pnl-section">
+                                <div class="pnl-amount" id="pnl-amount">+$48.14</div>
+                                <div class="pnl-percent" id="pnl-percent">+14.08%</div>
+                            </div>
+
+                            <!-- Trade Details Card -->
+                            <div class="trade-card">
+                                <div class="trade-card-title">Trade details</div>
+                                <div class="trade-detail-row">
+                                    <span class="detail-label">Instrument</span>
+                                    <span class="detail-value" id="detail-instrument">-</span>
+                                </div>
+                                <div class="trade-detail-row">
+                                    <span class="detail-label">Direction</span>
+                                    <span class="detail-value" id="detail-direction">-</span>
+                                </div>
+                                <div class="trade-detail-row">
+                                    <span class="detail-label">Trade type</span>
+                                    <span class="detail-value" id="detail-tradetype">-</span>
+                                </div>
+                                <div class="trade-detail-row">
+                                    <span class="detail-label">Score</span>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span class="detail-value" id="detail-score">-</span>
+                                        <div class="score-bar">
+                                            <div class="score-fill" id="score-fill" style="width: 85%;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Prices Card -->
+                            <div class="trade-card">
+                                <div class="trade-card-title">Prices</div>
+                                <div class="trade-detail-row">
+                                    <span class="detail-label">Avg entry</span>
+                                    <span class="detail-value" id="detail-entry-price">-</span>
+                                </div>
+                                <div class="trade-detail-row">
+                                    <span class="detail-label">Avg exit</span>
+                                    <span class="detail-value" id="detail-exit-price">-</span>
+                                </div>
+                                <div class="trade-detail-row">
+                                    <span class="detail-label">Position value</span>
+                                    <span class="detail-value" id="detail-position-value">-</span>
+                                </div>
+                            </div>
+
+                            <!-- Timing Card -->
+                            <div class="trade-card">
+                                <div class="trade-card-title">Timing</div>
+                                <div class="trade-detail-row">
+                                    <span class="detail-label">Entry</span>
+                                    <span class="detail-value" id="detail-entry-time">-</span>
+                                </div>
+                                <div class="trade-detail-row">
+                                    <span class="detail-label">Exit</span>
+                                    <span class="detail-value" id="detail-exit-time">-</span>
+                                </div>
+                                <div class="trade-detail-row">
+                                    <span class="detail-label">Length</span>
+                                    <span class="detail-value" id="detail-duration">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Load Folders Button -->
+                    <div style="margin-top: 20px; text-align: center;">
+                        <button class="btn-primary" onclick="loadFolders()">Load Folders</button>
+                    </div>
+                </div>
+
+                <!-- ============= FULLSCREEN MODAL ============= -->
+                <div id="fullscreen-modal" class="fullscreen-modal">
+                    <div class="fullscreen-container">
+                        <!-- Close Button -->
+                        <button type="button" class="fullscreen-close" onclick="exitFullscreen()">✕</button>
+
+                        <!-- Main Content -->
+                        <div class="fullscreen-content">
+                            <!-- Left: Image with Navigation -->
+                            <div class="fullscreen-image-section">
+                                <!-- Previous Button -->
+                                <button class="fullscreen-nav-btn fullscreen-nav-prev" onclick="previousImage()" title="Previous image">
+                                    ‹
+                                </button>
+
+                                <!-- Image Display -->
+                                <div class="fullscreen-image-area">
+                                    <img id="fullscreen-image" src="" alt="Trade chart">
+                                </div>
+
+                                <!-- Next Button -->
+                                <button class="fullscreen-nav-btn fullscreen-nav-next" onclick="nextImage()" title="Next image">
+                                    ›
+                                </button>
+
+                                <!-- Image Counter -->
+                                <div class="fullscreen-counter" id="fullscreen-counter">
+                                    Image 1 of 1
+                                </div>
+                            </div>
+
+                            <!-- Right: Notes Panel -->
+                            <div class="fullscreen-notes-section">
+                                <div class="fullscreen-notes-header">
+                                    <h3>Notes</h3>
+                                    <span id="fullscreen-image-name" class="fullscreen-image-name">-</span>
+                                </div>
+
+                                <textarea id="fullscreen-notes" class="fullscreen-notes-textarea" placeholder="Add notes about this image..."></textarea>
+
+                                <button class="btn-primary" style="width: 100%; margin-top: 12px;" onclick="saveFullscreenNotes()">
+                                    Save notes
+                                </button>
+
+                                <!-- Trade Info in Fullscreen -->
+                                <div class="fullscreen-trade-info">
+                                    <h4>Trade Info</h4>
+                                    <div class="fullscreen-info-row">
+                                        <span class="info-label">Outcome:</span>
+                                        <span id="fs-outcome" class="info-value">-</span>
+                                    </div>
+                                    <div class="fullscreen-info-row">
+                                        <span class="info-label">P&L:</span>
+                                        <span id="fs-pnl" class="info-value">-</span>
+                                    </div>
+                                    <div class="fullscreen-info-row">
+                                        <span class="info-label">Strategy:</span>
+                                        <span id="fs-strategy" class="info-value">-</span>
+                                    </div>
+                                    <div class="fullscreen-info-row">
+                                        <span class="info-label">Instrument:</span>
+                                        <span id="fs-instrument" class="info-value">-</span>
+                                    </div>
+                                    <div class="fullscreen-info-row">
+                                        <span class="info-label">Score:</span>
+                                        <span id="fs-score" class="info-value">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============= SECTION 2: CREATE ============= -->
+                <div id="create" class="section">
+                    <div class="card">
+                        <div class="card-title">New Trade Entry</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Ticker Name</label>
+                                <input type="text" id="create-ticker" placeholder="e.g., GFL or TSLA Apr17'26 372.5 CALL">
+                            </div>
+                            <div class="form-group">
+                                <label>Date</label>
+                                <input type="date" id="create-date">
+                            </div>
+                            <div class="form-group">
+                                <label>Timeframe</label>
+                                <select id="create-timeframe">
+                                    <option>D</option>
+                                    <option>W</option>
+                                    <option>4h</option>
+                                    <option>1h</option>
+                                    <option>15m</option>
+                                    <option>10m</option>
+                                    <option>5m</option>
+                                    <option>1m</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 16px;">
+                            <p class="card-subtitle">Chart Flags</p>
+                            <div style="display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: start;">
+                                <!-- Left: Before/After Close (Vertical Stack) -->
+                                <div style="display: flex; flex-direction: column; gap: 10px;">
+                                    <label style="display: flex; gap: 6px; align-items: center; cursor: pointer;">
+                                        <input type="radio" name="close-flag" id="flag-b" value="B">
+                                        <span>Before-close (B)</span>
+                                    </label>
+                                    <label style="display: flex; gap: 6px; align-items: center; cursor: pointer;">
+                                        <input type="radio" name="close-flag" id="flag-a" value="A">
+                                        <span>After-close (A)</span>
+                                    </label>
+                                </div>
+                                
+                                <!-- Right: Other Flags (Horizontal/Wrapped) -->
+                                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                                    <label style="display: flex; gap: 6px; align-items: center; cursor: pointer;">
+                                        <input type="checkbox" id="flag-i">
+                                        <span>Indicators (I)</span>
+                                    </label>
+                                    <label style="display: flex; gap: 6px; align-items: center; cursor: pointer;">
+                                        <input type="checkbox" id="flag-l">
+                                        <span>Log scale (L)</span>
+                                    </label>
+                                    <label style="display: flex; gap: 6px; align-items: center; cursor: pointer;">
+                                        <input type="checkbox" id="flag-o">
+                                        <span>Options overlay (O)</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Main Layout: Chart (Left) + Controls (Right) -->
+                        <div style="display: grid; grid-template-columns: 1fr 350px; gap: 24px;">
+                            
+                            <!-- LEFT: Chart Image -->
+                            <div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                    <label style="font-weight: 600;">Chart Image</label>
+                                    <div style="display: flex; gap: 8px;">
+                                        <button type="button" class="btn-fullscreen-icon" onclick="document.getElementById('image-input').click();" title="Upload image" style="width: 32px; height: 32px;">
+                                            ⬆️
+                                        </button>
+                                        <button type="button" class="btn-fullscreen-icon" onclick="clearImage()" id="clear-icon-btn" title="Clear image" style="width: 32px; height: 32px; display: none; color: var(--color-danger);">
+                                            🗑️
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="image-preview" id="image-preview">
+                                    <div class="image-preview-content">
+                                        <div class="image-upload-icon">📸</div>
+                                        <div class="image-upload-text">
+                                            <p><strong>Drag & drop</strong> or paste image</p>
+                                            <p style="font-size: 12px; color: var(--color-text-tertiary);">Paste with Ctrl+V</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <input type="file" id="image-input" accept="image/*" style="display: none;">
+                            </div>
+
+                            <!-- RIGHT: Controls Column -->
+                            <div style="display: flex; flex-direction: column; gap: 16px; align-items: center;">
+                                
+                                <!-- Will Save To (Info Box) -->
+                                <div style="padding: 12px; background: var(--color-bg-secondary); border-radius: var(--border-radius); font-size: 12px; width: 100%;">
+                                    <strong>Will save to:</strong><br>
+                                    <span id="save-path" style="word-break: break-all;">Select date and ticker</span>
+                                </div>
+
+                                <!-- Notes Section -->
+                                <div style="width: 100%;">
+                                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">Notes (Optional)</label>
+                                    <textarea id="create-notes" placeholder="Any observations about this trade..." style="width: 100%; height: 150px; padding: 12px; border: 1px solid var(--color-border); border-radius: var(--border-radius); font-family: inherit; font-size: 14px; resize: vertical;"></textarea>
+                                </div>
+
+                                <!-- Save Image Button (Bottom) -->
+                                <button class="btn-primary" onclick="uploadImage()" style="width: 200px; padding: 10px 16px;">Save Image</button>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============= SECTION 3: ANALYZE ============= -->
+                <div id="analyze" class="section">
+                    <div class="tab-group">
+                        <button class="tab active" onclick="switchAnalyzeTab('dashboard')">Dashboard</button>
+                        <button class="tab" onclick="switchAnalyzeTab('pnl')">P&L</button>
+                        <button class="tab" onclick="switchAnalyzeTab('radar')">Radar</button>
+                        <button class="tab" onclick="switchAnalyzeTab('calendar')">Calendar</button>
+                        <button class="tab" onclick="switchAnalyzeTab('tables')">Tables</button>
+                    </div>
+
+                    <!-- Dashboard Tab -->
+                    <div id="dashboard-tab" class="analyze-tab active">
+                        <!-- Date Range & Quick Filters -->
+                        <div class="card" style="margin-bottom: 16px;">
+                            <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <label style="font-size: 12px; color: var(--color-text-secondary);">Range</label>
+                                    <input type="date" id="dateFrom" value="2026-03-03" style="padding: 8px 12px; border: 1px solid var(--color-border); border-radius: 4px; font-size: 14px;">
+                                    <span style="color: var(--color-text-secondary);">→</span>
+                                    <input type="date" id="dateTo" value="2026-04-30" style="padding: 8px 12px; border: 1px solid var(--color-border); border-radius: 4px; font-size: 14px;">
+                                </div>
+                                <div style="display: flex; gap: 8px; margin-left: auto;">
+                                    <button onclick="setDateRange('7d')" style="padding: 8px 16px; border: 1px solid var(--color-border); background: white; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500;">7D</button>
+                                    <button onclick="setDateRange('30d')" style="padding: 8px 16px; border: 1px solid var(--color-border); background: white; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500;">30D</button>
+                                    <button onclick="setDateRange('ytd')" style="padding: 8px 16px; border: 1px solid var(--color-border); background: white; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500;">YTD</button>
+                                    <button onclick="setDateRange('all')" style="padding: 8px 16px; border: 1px solid var(--color-border); background: white; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500;">All</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- KPI Cards -->
+                        <div class="kpi-grid" id="kpi-cards">
+                            <div class="loading">Loading statistics...</div>
+                        </div>
+
+                        <!-- Main Charts Row -->
+                        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px;">
+                            <!-- Equity Curve -->
+                            <div class="card">
+                                <div class="card-title">Equity Curve</div>
+                                <div class="chart-container">
+                                    <canvas id="equityChart"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- By Strategy -->
+                            <div class="card">
+                                <div class="card-title" style="margin-bottom: 16px;">By Strategy</div>
+                                <div id="by-strategy-list" style="display: flex; flex-direction: column; gap: 16px;">
+                                    <div>
+                                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                            <span style="font-weight: 600;">Brando</span>
+                                            <span style="color: var(--color-success);">+$1,329</span>
+                                        </div>
+                                        <div style="display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--color-text-secondary);">
+                                            <div style="flex: 1; height: 6px; background: var(--color-success); border-radius: 3px; width: 100%;"></div>
+                                            <span>11 · 100%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Breakdowns Grid -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                            <!-- By Asset Type -->
+                            <div class="card">
+                                <div class="card-title" style="margin-bottom: 16px;">By Asset Type</div>
+                                <div id="by-asset-list" style="display: flex; flex-direction: column; gap: 12px;">
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; font-size: 12px;">
+                                        <div style="font-weight: 600;">Type</div>
+                                        <div style="text-align: center;">N</div>
+                                        <div style="text-align: center;">Win %</div>
+                                        <div style="text-align: right;">Net</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- By Trade Type -->
+                            <div class="card">
+                                <div class="card-title" style="margin-bottom: 16px;">By Day of Week</div>
+                                <div id="by-dow-list" style="display: flex; flex-direction: column; gap: 12px;">
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; font-size: 12px;">
+                                        <div style="font-weight: 600;">Day</div>
+                                        <div style="text-align: center;">N</div>
+                                        <div style="text-align: center;">Win %</div>
+                                        <div style="text-align: right;">Net</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Trade Time Performance -->
+                        <div class="card">
+                            <div class="card-title">Trade Time Performance</div>
+                            <div class="chart-container" style="position: relative; height: 300px;">
+                                <canvas id="tradeTimeChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- P&L Tab -->
+                    <div id="pnl-tab" class="analyze-tab">
+                        <div class="card">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                <div class="card-title">P&L Overview</div>
+                                <div class="pnl-view-toggle">
+                                    <button class="pnl-view-btn active" onclick="switchPnlView('daily')">Daily</button>
+                                    <button class="pnl-view-btn" onclick="switchPnlView('weekly')">Weekly</button>
+                                    <button class="pnl-view-btn" onclick="switchPnlView('monthly')">Monthly</button>
+                                </div>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="dailyChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Calendar Tab -->
+                    <div id="calendar-tab" class="analyze-tab">
+                        <div class="card">
+                            <div style="margin-bottom: 20px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                    <div>
+                                        <h3 id="calendar-month" style="margin: 0; font-size: 20px;">April 2026</h3>
+                                        <div id="calendar-summary" style="font-size: 13px; color: var(--color-text-secondary); margin-top: 4px;">
+                                            Month: <strong id="calendar-total">-</strong> · <strong id="calendar-trades">-</strong> trades · <strong id="calendar-wins">-</strong> wins / <strong id="calendar-losses">-</strong> losses
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; gap: 8px;">
+                                        <button class="btn-secondary" onclick="previousMonth()" style="padding: 6px 12px; font-size: 12px;">← Prev</button>
+                                        <button class="btn-secondary" onclick="nextMonth()" style="padding: 6px 12px; font-size: 12px;">Next →</button>
+                                    </div>
+                                </div>
+
+                                <!-- Calendar Grid -->
+                                <div class="calendar-container">
+                                    <div class="calendar-grid" id="calendar-grid">
+                                        <!-- Generated by JavaScript -->
+                                    </div>
+                                </div>
+
+                                <!-- Legend -->
+                                <div style="display: flex; gap: 20px; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--color-border); font-size: 12px;">
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <div style="width: 12px; height: 12px; background: var(--color-success); border-radius: 2px;"></div>
+                                        <span>Winning day</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <div style="width: 12px; height: 12px; background: var(--color-danger); border-radius: 2px;"></div>
+                                        <span>Losing day</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <div style="width: 12px; height: 12px; background: var(--color-bg-secondary); border-radius: 2px;"></div>
+                                        <span>No trades</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Performance Radar Tab -->
+                    <div id="radar-tab" class="analyze-tab">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                            <!-- Left: Radar Chart -->
+                            <div class="card">
+                                <div class="card-title">Performance Radar</div>
+                                <div class="chart-container" style="position: relative; height: 400px;">
+                                    <canvas id="radarChart"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Right: Metrics -->
+                            <div>
+                                <div class="card">
+                                    <div class="metric-item">
+                                        <div class="metric-label">Win Rate</div>
+                                        <div class="metric-value" id="metric-winrate">76.8%</div>
+                                        <div class="metric-bar">
+                                            <div class="metric-fill" id="bar-winrate" style="width: 76.8%;"></div>
+                                        </div>
+                                        <div class="metric-desc" id="desc-winrate">43 wins / 13 losses</div>
+                                    </div>
+
+                                    <div class="metric-item">
+                                        <div class="metric-label">Profit Factor</div>
+                                        <div class="metric-value" id="metric-profitfactor">6.54</div>
+                                        <div class="metric-bar">
+                                            <div class="metric-fill" id="bar-profitfactor" style="width: 65.4%;"></div>
+                                        </div>
+                                        <div class="metric-desc" id="desc-profitfactor">$3,923 wins ÷ $600 losses</div>
+                                    </div>
+
+                                    <div class="metric-item">
+                                        <div class="metric-label">Consistency</div>
+                                        <div class="metric-value" id="metric-consistency">82.1</div>
+                                        <div class="metric-bar">
+                                            <div class="metric-fill" id="bar-consistency" style="width: 82.1%;"></div>
+                                        </div>
+                                        <div class="metric-desc" id="desc-consistency">Daily returns volatility</div>
+                                    </div>
+
+                                    <div class="metric-item">
+                                        <div class="metric-label">Max Drawdown</div>
+                                        <div class="metric-value" id="metric-drawdown">92.4</div>
+                                        <div class="metric-bar">
+                                            <div class="metric-fill" id="bar-drawdown" style="width: 92.4%;"></div>
+                                        </div>
+                                        <div class="metric-desc" id="desc-drawdown">Only -7.6% below peak</div>
+                                    </div>
+
+                                    <div class="metric-item">
+                                        <div class="metric-label">Recovery Factor</div>
+                                        <div class="metric-value" id="metric-recovery">100.0</div>
+                                        <div class="metric-bar">
+                                            <div class="metric-fill" id="bar-recovery" style="width: 100%;"></div>
+                                        </div>
+                                        <div class="metric-desc" id="desc-recovery">Quick bounce back from dips</div>
+                                    </div>
+
+                                    <div class="metric-item">
+                                        <div class="metric-label">Win/Loss Ratio</div>
+                                        <div class="metric-value" id="metric-winloss">1.98</div>
+                                        <div class="metric-bar">
+                                            <div class="metric-fill" id="bar-winloss" style="width: 99%;"></div>
+                                        </div>
+                                        <div class="metric-desc" id="desc-winloss">Avg win $91 / avg loss -$46</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bottom: Assessment -->
+                        <div class="card" style="margin-top: 24px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px;">
+                                <div>
+                                    <div class="card-title" style="font-size: 14px; margin-bottom: 12px;">Strengths</div>
+                                    <ul id="strengths-list" style="list-style: none; padding: 0; margin: 0;">
+                                        <li style="margin-bottom: 8px;">• Exceptional profit factor (6.54)</li>
+                                        <li style="margin-bottom: 8px;">• Fast recovery from drawdowns</li>
+                                        <li>• Balanced win/loss sizing</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <div class="card-title" style="font-size: 14px; margin-bottom: 12px;">Areas to Watch</div>
+                                    <ul id="areas-list" style="list-style: none; padding: 0; margin: 0;">
+                                        <li style="margin-bottom: 8px;">• Wed/Fri underperformance (69% WR)</li>
+                                        <li style="margin-bottom: 8px;">• 12 PM entry hour weakness</li>
+                                        <li>• Mehrdad strategy lagging Brando</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <div class="card-title" style="font-size: 14px; margin-bottom: 12px;">Overall Assessment</div>
+                                    <p id="assessment-text" style="margin: 0; color: var(--color-text-secondary); font-size: 14px;">
+                                        Strong trader. Focus on time-of-day patterns and explore why Brando strategy outperforms.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tables Tab -->
+                    <div id="tables-tab" class="analyze-tab">
+                        <div class="card">
+                            <div class="card-title">All Trades</div>
+                            <div style="overflow-x: auto;">
+                                <table id="trades-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Instrument</th>
+                                            <th>Strategy</th>
+                                            <th>P&L</th>
+                                            <th>Outcome</th>
+                                            <th>Return %</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="trades-body">
+                                        <tr>
+                                            <td colspan="6" style="text-align: center; color: var(--color-text-secondary);">Loading trades...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============= OVERWRITE WARNING DIALOG ============= -->
+    <div id="overwrite-dialog" class="overwrite-dialog">
+        <div class="overwrite-dialog-content">
+            <div class="overwrite-dialog-header">
+                <h3>⚠️ File Already Exists</h3>
+                <button class="overwrite-close" onclick="closeOverwriteDialog()">✕</button>
+            </div>
+            
+            <div class="overwrite-dialog-body">
+                <p>A file with this name already exists:</p>
+                <div class="overwrite-file-info">
+                    <strong id="overwrite-filename">2026-06-20-TSLA/1h.png</strong>
+                </div>
+                
+                <p style="margin-top: 16px;">Do you want to replace it?</p>
+            </div>
+            
+            <div class="overwrite-dialog-footer">
+                <button class="btn-secondary" onclick="closeOverwriteDialog()">
+                    Cancel
+                </button>
+                <button class="btn-primary" onclick="confirmOverwrite()" style="background: var(--color-danger);">
+                    🔄 Replace File
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
