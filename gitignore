@@ -1,5 +1,4 @@
 # Credentials (NEVER push these!)
-credentials.json
 .env
 *.env
 
