@@ -73,31 +73,61 @@ def setup_credentials():
         return False
     
     try:
+        # DEBUG: Check what we have
+        print("\n" + "="*70)
+        print("🔍 CREDENTIALS DEBUG")
+        print("="*70)
+        print(f"CREDENTIALS_JSON env var exists: {bool(os.environ.get('CREDENTIALS_JSON'))}")
+        print(f"credentials.json file exists: {CREDENTIALS_FILE.exists()}")
+        
         # Try reading from environment variable first
         if os.environ.get('CREDENTIALS_JSON'):
             creds_json = os.environ.get('CREDENTIALS_JSON')
-            creds_dict = json.loads(creds_json)
+            print(f"✓ CREDENTIALS_JSON found in environment")
+            print(f"  Length: {len(creds_json)} characters")
+            print(f"  First 100 chars: {creds_json[:100]}")
+            print(f"  Trying to parse as JSON...")
+            
+            try:
+                creds_dict = json.loads(creds_json)
+                print(f"  ✅ Successfully parsed as JSON!")
+                print(f"  Service account email: {creds_dict.get('client_email', 'NOT FOUND')}")
+            except json.JSONDecodeError as e:
+                print(f"  ❌ Failed to parse JSON: {e}")
+                raise
+            
             credentials = Credentials.from_service_account_info(
                 creds_dict,
                 scopes=['https://www.googleapis.com/auth/drive']
             )
-            print("✅ Google Drive connected (from environment)")
+            print(f"  ✅ Google Drive connected (from environment)")
+            
         # Fall back to credentials.json file
         elif CREDENTIALS_FILE.exists():
+            print(f"✓ credentials.json file found")
             credentials = Credentials.from_service_account_file(
                 str(CREDENTIALS_FILE),
                 scopes=['https://www.googleapis.com/auth/drive']
             )
-            print("✅ Google Drive connected (from credentials.json)")
+            print(f"  ✅ Google Drive connected (from credentials.json)")
         else:
-            print("⚠️  No Google Drive credentials found")
+            print(f"❌ No credentials found!")
+            print("="*70 + "\n")
             return False
         
         drive_service = discovery.build('drive', 'v3', credentials=credentials)
+        print("="*70)
+        print("✅ GOOGLE DRIVE SETUP COMPLETE")
+        print("="*70 + "\n")
         return True
+        
     except Exception as e:
-        print(f"❌ Google Drive setup error: {e}")
+        print(f"\n❌ ERROR: {e}")
+        import traceback
+        traceback.print_exc()
+        print("="*70 + "\n")
         return False
+    
 
 def download_excel_from_drive():
     """Download Trades_details.xlsx from Google Drive"""
